@@ -1,5 +1,10 @@
 ---
 # A GitHub profile README must open with the <img> tag (MD041) and can only
 # collapse its own docs with <details> (MD033), so those two rules are off here.
+# MD013 keeps tables off: a table row cannot be wrapped without breaking it.
 MD041: false
 MD033: false
+MD013:
+  line_length: 88
+  tables: false
+  code_blocks: false

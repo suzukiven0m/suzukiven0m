@@ -1,0 +1,5 @@
+---
+# A GitHub profile README must open with the <img> tag (MD041) and can only
+# collapse its own docs with <details> (MD033), so those two rules are off here.
+MD041: false
+MD033: false

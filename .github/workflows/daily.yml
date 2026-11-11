@@ -1,0 +1,75 @@
+name: Daily
+
+on:
+  schedule:
+    # Just after midnight UTC, so the picture shows the day that just ended.
+    # GitHub queues scheduled runs and can start them 5-60 minutes late under
+    # load, so the exact minute is not load-bearing; only "after 00:00 UTC" is.
+    - cron: "17 0 * * *"
+  workflow_dispatch:
+  push:
+    # Redraw when the code or the art changes. out/daily.gif is deliberately
+    # absent: this workflow commits that path itself.
+    paths:
+      - ".github/workflows/daily.yml"
+      - "src/**"
+      - "art/**"
+
+permissions:
+  contents: write
+
+# One renderer at a time, so two runs cannot race for the same commit.
+concurrency:
+  group: daily-gif
+  cancel-in-progress: false
+
+env:
+  LOGIN: suzukiven0m
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit so a moved tag cannot change what runs with write
+      # access. Bump the pin and the trailing comment together.
+      # The persisted checkout credential is required: this job pushes. Nothing
+      # is uploaded as an artifact, so it never leaves the runner.
+      # zizmor: ignore[artipacked]
+      # v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Check the art and the palette still render
+        run: python src/render.py --check
+
+      - name: Draw the day
+        env:
+          # A plain GITHUB_TOKEN only sees public contributions. To have private
+          # ones counted too, add a personal access token as ACTIVITY_TOKEN.
+          GH_TOKEN: ${{ secrets.ACTIVITY_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          python src/collect.py --login "$LOGIN" --out out/activity.json
+          python src/render.py --data out/activity.json
+
+      - name: Commit the frame if it changed
+        run: |
+          set -euo pipefail
+          test -s out/daily.gif   # never publish an empty file
+          git add out/daily.gif
+          if git diff --cached --quiet; then
+            echo "unchanged; nothing to commit"
+            exit 0
+          fi
+          bot="41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name  "github-actions[bot]"
+          git config user.email "$bot"
+          git commit --quiet -m "daily: draw $(date -u +%F)"
+          # Rebase in case something else landed on the branch meanwhile.
+          git pull --rebase --autostash --quiet origin "$GITHUB_REF_NAME"
+          git push --quiet

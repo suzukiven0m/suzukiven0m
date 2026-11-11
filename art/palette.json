@@ -1,0 +1,32 @@
+{
+  "_": "Every colour the renderer uses. Swap these to restyle the whole scene.",
+
+  "_levels": "Day activity, quiet -> busiest. Index = contributionLevel (0-4).",
+  "levels": ["#1b1f33", "#2f3a66", "#4f5aa8", "#8d7ad6", "#ffcf6b"],
+
+  "_sky": "Vertical gradient per mood. The mood comes from yesterday's activity.",
+  "sky": {
+    "quiet": ["#08090f", "#161a2b"],
+    "low": ["#0c0e1c", "#232444"],
+    "steady": ["#111427", "#3a3054"],
+    "blazing": ["#17122b", "#6b3a5f"]
+  },
+
+  "moon": "#ffe9b0",
+  "speck": "#8d7ad6",
+
+  "_panel": "Card the year's squares sit on, so empty days still read as days.",
+  "panel": "#0a0c15",
+  "panel_edge": "#252a44",
+
+  "_ground": "Sea the creature walks on, top -> bottom.",
+  "ground": ["#171b2c", "#090b13"],
+
+  "_chars": "Sprite characters. '.' is transparent and is not listed here.",
+  "chars": {
+    "o": "#05060b",
+    "w": "#f2e9d8",
+    "g": "#ffcf6b",
+    "r": "#e8795f"
+  }
+}

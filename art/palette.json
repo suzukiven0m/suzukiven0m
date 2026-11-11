@@ -1,18 +1,8 @@
 {
-  "_": "Every colour in the wave. Edit this to restyle the whole picture.",
+  "_": "The water. deep is the trough, crest is the ring highlight, and the highlight is tinted toward crest_hot as your activity rises.",
 
-  "background": "#05070d",
-
-  "_temperature": "Cold (a day with no commits) to hot (your busiest day). Evenly spaced stops, 0 -> 1. This is the gradient.",
-  "temperature": [
-    "#4f7bf5",
-    "#33b0e8",
-    "#2fd9ae",
-    "#ffd166",
-    "#ff8340",
-    "#fff4d6"
-  ],
-
-  "_ink": "art/glyphs.txt is used as a mask, so this colour never reaches the picture; it only has to be a valid colour.",
-  "ink": "#ffffff"
+  "deep": "#03101c",
+  "shallow": "#0a4363",
+  "crest": "#5cc6ee",
+  "crest_hot": "#fff6e6"
 }

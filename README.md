@@ -1,11 +1,10 @@
-<img src="out/daily.gif" width="100%" alt="A year of contributions as an oscillating field of ASCII characters, blue where quiet and white hot where busy" />
+<img src="out/daily.gif" width="100%" alt="A drop of water landing in a dark ocean, its rings racing outward at whatever pace my last week of commits set" />
 
-**A year of commits, as temperature.** One glyph column per stretch of the year,
-left is oldest, right is today. Quiet days run cold and calm; busy ones burn
-white hot and ripple fast.
+**A drop in the ocean, rippling at my pace.** How busy my last week was decides
+how fast the rings travel, how tightly they are spaced, and how far they carry.
 
 <details>
-<summary>How it works, and how to redraw it</summary>
+<summary>How it works, and how to retune it</summary>
 
 ## What the picture is
 
@@ -13,25 +12,28 @@ white hot and ripple fast.
 [`.github/workflows/daily.yml`](.github/workflows/daily.yml) and committed only
 if it changed.
 
-Each of the 123 glyph columns samples one ~3-day stretch of your contribution
-calendar, in order. That column's temperature then drives everything about it:
+One drop lands at the centre. A single activity reading — your commits over the
+last 7 complete days, graded against your own year — drives four things at once,
+all of them the same physical quantity:
 
-| In the picture | Comes from |
-| --- | --- |
-| Horizontal position | time — left is a year ago, right is today |
-| Colour | that column's temperature, blue (no commits) → white hot (busiest) |
-| Crest height and ribbon thickness | temperature — busier columns ride higher and thicker |
-| Ripples per column | temperature — cold columns ripple slowly and widely, hot ones tightly |
-| Oscillation speed | temperature — 1 full loop per GIF when cold, 3 when hot |
-| Glyph chosen | distance from that column's crest, along the ramp in `art/glyphs.txt` |
-| Per-column phase and gain | seeded by the date |
+| In the picture | Quiet week | Busy week |
+| --- | --- | --- |
+| Ring spacing | 38 px apart | 20 px apart |
+| Ring speed | 1 loop per GIF | 3 loops per GIF |
+| How far they carry | 80 px | 135 px |
+| Ring brightness | 0.50 | 1.00 |
 
-"Temperature" is relative to you: the ramp tops out at the 90th percentile of
-your active days, and commit counts are square-rooted first, because they are
-heavily skewed — otherwise one 44-commit day would flatten a whole year to cold.
+So a quiet week is a few wide dim rings creeping outward and dying young; a busy
+one is tight bright rings racing away and reaching further. The crest is tinted
+hotter as activity rises, too, so the colour moves with the speed.
 
-Columns with no activity at all are still real: they are what makes the hot
-stretches read as hot.
+Three details exist purely to stop it looking like a radar sweep, and all three
+are baked into per-pixel maps, so they cost nothing at frame time:
+
+- **Refraction** — the swell bends the ring spacing, so they are not drawn circles.
+- **Dispersion** — ripples spread further apart the further they have travelled,
+  the way real ones do.
+- **Directional light** — the rings are brighter on one side.
 
 ## Run it locally
 
@@ -43,35 +45,39 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 `collect.py` picks up a token from `GH_TOKEN`/`GITHUB_TOKEN`, or from
-`gh auth token` if you are logged in to the GitHub CLI. `render.py` writes
-`out/daily.gif`; `--preview` also leaves a single frame as a PNG.
+`gh auth token` if you are logged in to the GitHub CLI. `--preview` also leaves
+one frame as a PNG. A full render takes well under a second, so tune freely.
 
-To see a different day without waiting, fake the date:
+To see a different night without waiting, fake the date:
 
 ```sh
 .venv/bin/python src/collect.py --login suzukiven0m --out out/activity.json --today 2026-06-01
 ```
 
-It takes about half a second, so tune freely.
+## Tune it
 
-## Change the art
+`art/palette.json` holds the four water colours: `deep` at the trough,
+`shallow` mid-water, `crest` for the ring highlight, and `crest_hot` which the
+crest is tinted toward as activity rises.
 
-Both files in `art/` are plain text and need no code changes.
+Everything about the wave is a constant at the top of `src/render.py`:
 
-`art/glyphs.txt` is the character ramp, sparse to dense. **Order is the ramp** —
-the last frame is the densest. One character per pixel: `o` is ink, `.` is empty,
-and `#` at the start of a line is a comment. Every frame must be the same size
-and carry strictly more ink than the one before it, or `--check` refuses to
-render.
+| Constant | Means |
+| --- | --- |
+| `RIPPLE_QUIET` / `RIPPLE_BUSY` | pixels between rings, quiet to busy |
+| `CARRY_QUIET` / `CARRY_BUSY` | how far out the rings reach before fading |
+| `LOOPS_QUIET` / `LOOPS_BUSY` | whole loops per GIF. Must stay integers, or the loop will not close |
+| `REFRACTION`, `DISPERSION`, `LIGHT_ANGLE` | the three that make it read as water |
+| `ACTIVITY_WINDOW` | days averaged into "activity". 7 is a week; 1 is yesterday |
+| `GRADIENT_STEPS` | distinct colours. The main file-size lever |
+| `FRAMES` | frames per GIF. The other size lever |
 
-`art/palette.json` holds the background, the ink mask colour, and the
-six-stop cold-to-hot gradient.
+`GRADIENT_STEPS` and `FRAMES` are the size knobs because GIF's compression is
+poor on smooth gradients: measured at 738×192, 256 colours gave 8.7 MB, 64 gave
+2.3 MB, 16 gave 1.2 MB. A dark-water look compresses far better than a filled
+one, which is most of why this lands near 1 MB.
 
-The whole wave is tuned by the constants at the top of `src/render.py`
-(`AMP_COLD`/`AMP_HOT`, `THICK_COLD`/`THICK_HOT`, `RIPPLE_COLD`/`RIPPLE_HOT`,
-`LOOPS_COLD`/`LOOPS_HOT`).
-
-After editing anything, check it renders and stays README-sized:
+After any change:
 
 ```sh
 .venv/bin/python src/render.py --check
@@ -82,22 +88,24 @@ After editing anything, check it renders and stays README-sized:
 - **Bot commits do not count as contributions.** The nightly commit is made by
   `github-actions[bot]`, so it never inflates the graph it draws.
 - **GitHub disables scheduled workflows after 60 days without repository
-  activity.** The per-column phase and gain are seeded by the date, so the GIF
-  differs every night even through a totally quiet stretch. `--check` renders two
-  nights with *identical activity and different dates* and fails if they come out
-  byte-identical, so this cannot silently regress.
+  activity.** The swell's warp is seeded by the date, so the GIF differs every
+  night even through a dead-quiet stretch. `--check` renders two nights with
+  *identical activity and different dates* and fails if they come out identical,
+  so this cannot silently regress.
 - **Cron is best-effort.** GitHub can start a scheduled run 5–60 minutes late;
   only "after 00:00 UTC" matters.
 - **Private contributions.** A plain `GITHUB_TOKEN` sees public activity only.
   Add a personal access token as the `ACTIVITY_TOKEN` secret to include private
   contributions.
 - **GIF size.** Over 3 MB and `render.py` refuses to write, rather than publish
-  something a README browser will not load. A typical year comes in around
-  350 KB.
+  something a README browser will not load.
 - **Concurrent runs** are serialized by the workflow `concurrency` group, and the
   commit step rebases before pushing.
 - **Pinned actions.** Checkout and setup-python are pinned to commits, since this
   job runs with `contents: write`.
+
+`--check` also asserts that the water actually moves, that the loop closes
+exactly, and that a dead-quiet week does not render the same as a busy one.
 
 If the schedule ever does get disabled, re-enable it from the Actions tab or with
 `gh workflow enable daily.yml`.
